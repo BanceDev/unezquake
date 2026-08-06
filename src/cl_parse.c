@@ -3476,7 +3476,7 @@ void CL_ParseStufftext (void)
 			}
 		}
 		else if (!strncmp(s, "//ktx di ", sizeof("//ktx di ") - 1)) {
-			if (cl.standby && !CL_Demo_SkipMessage(true)) {
+			if (!CL_Demo_SkipMessage(true)) {
 				// Ignore if not the tracked player
 				CL_ReadKtxDamageIndicatorString(s + 2);
 			}

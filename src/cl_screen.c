@@ -1210,12 +1210,10 @@ static cvar_t  scr_damage_scale            = { "scr_damage_scale", "1" };
 static cvar_t  scr_damage_offset_spectator = { "scr_damage_offset_spectator", "28" };
 static cvar_t  scr_damage_offset_ingame    = { "scr_damage_offset_ingame", "14" };
 
-static float DAMAGE_INITIAL_VELOCITY[2] = { 250, 200 };
+#define DAMAGE_INITIAL_VELOCITY 200
 #define DAMAGE_VERTICAL_OFFSET_INGAME 16
 #define DAMAGE_VERTICAL_OFFSET_SPECTATOR 32
 #define DAMAGE_GRAVITY 400
-
-static int direction_order = 0;
 
 void SCR_SetupDamageIndicators(void)
 {
@@ -1300,30 +1298,21 @@ static void SCR_DamageInit(scr_damage_t * dmg, int damage, vec3_t origin, qbool 
 	snprintf(dmg->text, sizeof(dmg->text), "%s%d", color, damage);
 	VectorCopy(origin, dmg->origin);
 	dmg->origin[2] += (cl.spectator ? scr_damage_offset_spectator.value : scr_damage_offset_ingame.value);
-	switch (direction_order % 4) {
-	case 0:
-		dmg->vel[0] = DAMAGE_INITIAL_VELOCITY[0];
-		break;
-	case 1:
-		dmg->vel[0] = -DAMAGE_INITIAL_VELOCITY[0];
-		break;
-	case 2:
-		dmg->vel[0] = DAMAGE_INITIAL_VELOCITY[0] / 3;
-		break;
-	case 3:
-		dmg->vel[0] = -DAMAGE_INITIAL_VELOCITY[0] / 3;
-		break;
-	}
-	dmg->vel[0] *= distance;
-	dmg->vel[1] = DAMAGE_INITIAL_VELOCITY[1] * distance;
+	dmg->vel[0] = 0;
+	dmg->vel[1] = DAMAGE_INITIAL_VELOCITY * distance;
 	VectorCopy(dmg->origin, origin);
-	++direction_order;
 }
 
 static void CL_SpawnDamageIndicatorDirect(int deathtype, vec3_t origin, int damage, qbool splash_damage, qbool team_damage)
 {
 	if (scr_damage_hitbeep.integer) {
-		S_LocalSound("dmg-notification.wav");
+		sfx_t* sfx = S_PrecacheSound("dmg-notification.wav");
+
+		if (sfx) {
+			// Use channel 0 (never-override) instead of S_LocalSound()'s -1 (always-override)
+			// so back-to-back hits (eg. LG) layer their beeps instead of cutting each other off.
+			S_StartSound(cl.playernum + 1, 0, sfx, vec3_origin, 1, 0);
+		}
 	}
 
 	if (scr_damage_floating.integer) {
