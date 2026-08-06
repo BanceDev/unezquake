@@ -213,8 +213,8 @@ static qbool NET_PacketQueueAdd(packet_queue_t* queue, byte* data, int size, net
 			ms_delay = max(0, cl_delay_packet_target.value - expected_latency + deviation);
 		}
 		else {
-			// push some of the delay onto outgoing
-			ms_delay = cls.latency / 2;
+			// push half the current latency onto outgoing; cls.latency is in seconds
+			ms_delay = 0.5 * cls.latency * 1000.0;
 		}
 	}
 	else {
@@ -1017,7 +1017,7 @@ void NET_SendPacket (netsrc_t netsrc, int length, void *data, netadr_t to)
 #ifdef SERVERONLY
 	qbool delay = false;
 #else
-	qbool delay = (netsrc == NS_CLIENT && cl_delay_packet.integer);
+	qbool delay = (netsrc == NS_CLIENT && (cl_delay_packet.integer || cl_delay_packet_target.integer));
 #endif
 
 	NET_SendPacketEx (netsrc, length, data, to, delay);
